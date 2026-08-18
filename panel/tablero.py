@@ -697,7 +697,7 @@ async function refrescar(b){
   b.disabled=true;b.textContent='Actualizando…';
   try{const r=await fetch('/api/refresh',{method:'POST'});const j=await r.json();
     toast(j.msg||'Listo');setTimeout(()=>location.reload(),700);}
-  catch(e){toast('Error: '+e);b.disabled=false;b.textContent='Actualizar índice';}
+  catch(e){toast('Error: '+e);b.disabled=false;b.textContent='Refrescar todo';}
 }
 async function borrar(rel,ses){
   if(!vivo) return toast('Arranca el servidor con  tablero  para usar los botones');
@@ -1014,7 +1014,7 @@ def construir(datos, vivo: bool) -> str:
     A(f'<div class="tiles">{tiles}</div>')
 
     A('<div class="bar-tools">'
-      '<button onclick="refrescar(this)">Actualizar índice</button>'
+      '<button onclick="refrescar(this)">Refrescar todo</button>'
       '<button onclick="verSueltos(this)" title="Busca lo que quedó suelto en la raíz y '
       'propone a qué carpeta llevarlo">Organizar lo suelto</button>'
       '<input type="search" placeholder="Filtrar proyectos…" oninput="filtrar(this.value)">'
