@@ -6,8 +6,12 @@ como primer mensaje.
 ```bash
 git clone https://github.com/nicolaspa1/claude-escritorio-tablero.git ~/Desktop/kit-escritorio
 cd ~/Desktop/kit-escritorio
-claude
+claude --model sonnet --effort medium
 ```
+
+> Sonnet con esfuerzo medio es la mejor relación calidad/precio para esto. Si pagas
+> por token, mira la sección de coste en `CLAUDE.md` antes de empezar — sobre todo
+> lo de no retomar sesiones gigantes, que es lo que más presupuesto quema.
 
 ---
 

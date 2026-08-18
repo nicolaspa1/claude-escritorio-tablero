@@ -68,27 +68,64 @@ Reglas que no se pueden saltar:
 
 ---
 
-## Con qué modelo correr esto
+## Con qué modelo correr esto (y cuánto cuesta)
 
-**La sesión de organización: Sonnet.** El trabajo es leer carpetas, decidir y mover
-ficheros; no necesita el modelo más caro. Si la estructura te parece un problema
-difícil (muchos proyectos, criterios que se solapan) sube a Opus **solo para la fase
-2**, la de proponer la estructura, y vuelve a Sonnet para ejecutar.
+**Arranca así:**
 
-**Retomar conversaciones viejas: depende del tamaño.** Un transcript de 70 MB no
-cabe en el contexto de Haiku. Si al hacer `claude --continue` sale *"Prompt is too
-long"*, repite con `--model sonnet` o superior: la sesión está intacta, solo era el
-modelo.
+```bash
+claude --model sonnet --effort medium
+```
 
-**El tablero usa Haiku por su cuenta.** Cuando pulsas «Proponme algo», «¿Dónde va?» o
-«Organizar lo suelto», el servidor lanza `claude -p --model haiku` en segundo plano
-para clasificar. Es deliberado: son respuestas cortas y estructuradas (un JSON), no
-hace falta más, y así cada clic cuesta céntimos y tarda ~8 s en vez de bastante más.
-Si quieres cambiarlo, están los tres sitios en `panel/tablero.py`:
+**Sonnet es la mejor relación calidad/precio para esta tarea.** El trabajo es leer
+carpetas, decidir qué es cada una y mover archivos: mucho volumen, poca dificultad
+conceptual. Haiku se queda corto como modelo principal — falla más en el criterio de
+"qué es realmente esta carpeta", y cada error cuesta tokens en corregirlo; además su
+contexto es bastante menor, y con muchas sesiones acumuladas se nota. Opus no
+compensa su sobreprecio aquí: Sonnet alcanza calidad cercana en trabajo agéntico.
+
+Sube a Opus **solo para la fase 2**, la de proponer la estructura, si no la tienes
+clara — y vuelve a Sonnet para ejecutar la mudanza.
+
+Precios de lista por millón de tokens (entrada / salida), como referencia de
+proporción: Haiku 4.5 $1/$5 · Sonnet 5 $3/$15 · Opus 4.8 $5/$25. Opus sale unas
+2,5 veces más caro que Sonnet.
+
+### Si pagas por token, estas son las tres palancas
+
+Esta tarea es **pesada en entrada** (listar carpetas, leer archivos, revisar
+transcripciones) y ligera en salida. En orden de impacto:
+
+**1. Baja el esfuerzo.** El flag `--effort` va en `high` por defecto y mover
+archivos no lo necesita. `--effort medium` recorta bastante el razonamiento sin
+perder calidad en trabajo mecánico. Súbelo solo para decidir la estructura.
+
+**2. No retomes sesiones gigantes.** La que más presupuesto puede quemar. En
+facturación por token, cada turno reenvía todo el historial, así que un
+`claude --resume` sobre una sesión de cientos de MB es un gasto enorme y repetido.
+Mira el tamaño antes:
+
+```bash
+bash -c 'shopt -s nullglob; cd ~/.claude/projects
+for d in */; do d=${d%/}; f=(./"$d"/*.jsonl); [ ${#f[@]} -eq 0 ] && continue
+  echo "$(du -ch "${f[@]}" | tail -1 | cut -f1)  $d"; done | sort -rh | head'
+```
+
+Para las grandes, empieza una conversación nueva en la carpeta en vez de retomarla.
+
+**3. Tope duro en pasadas automáticas.** `--max-budget-usd` limita el gasto, pero
+solo funciona junto con `--print` (no interactivo).
+
+**El tablero usa Haiku por su cuenta** — «Proponme algo», «¿Dónde va?» y «Organizar
+lo suelto» lanzan `claude -p --model haiku` en segundo plano. Son respuestas cortas
+en JSON, así que cada clic cuesta céntimos. Los tres sitios:
 
 ```bash
 grep -n '"--model"' panel/tablero.py
 ```
+
+**Retomar una conversación grande necesita contexto amplio.** Si al hacer
+`claude --continue` sale *"Prompt is too long"*, la sesión está intacta — repite con
+`--model sonnet` o superior.
 
 ## Fase 1 — Entender qué hay
 

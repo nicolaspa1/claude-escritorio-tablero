@@ -56,14 +56,34 @@ haces algo en el tablero (crear, borrar, mover, marcar un pendiente) y cuando pu
 Si abres `Tablero.app` y ves datos viejos, es la foto: espera unos segundos a que
 arranque el servidor y la página salta sola a la versión en vivo.
 
-## Qué modelo usar
+## Qué modelo usar y cuánto cuesta
 
-- **Organizar el escritorio:** Sonnet. Sube a Opus solo si la estructura se te
-  atraganta, y vuelve a Sonnet para ejecutar.
-- **Retomar una conversación enorme:** Sonnet u Opus. Con Haiku sale *"Prompt is too
-  long"* — la sesión está bien, es el contexto del modelo.
-- **El tablero por dentro:** usa Haiku solo, para clasificar carpetas y proponer
-  nombres. Respuestas cortas en JSON: rápido y barato.
+```bash
+claude --model sonnet --effort medium
+```
+
+**Sonnet** es la mejor relación calidad/precio aquí: el trabajo es leer carpetas y
+mover archivos, mucho volumen y poca dificultad conceptual. Haiku se queda corto
+como modelo principal (falla más al juzgar qué es cada carpeta, y tiene menos
+contexto); Opus cuesta unas 2,5 veces más sin aportar lo suficiente en esta tarea —
+súbelo solo para decidir la estructura, y vuelve a Sonnet para ejecutar.
+
+Referencia por millón de tokens (entrada/salida): Haiku 4.5 $1/$5 · Sonnet 5 $3/$15
+· Opus 4.8 $5/$25.
+
+**Si pagas por token**, las tres palancas, en orden de impacto:
+
+1. **`--effort medium`** — va en `high` por defecto; mover archivos no lo necesita.
+2. **No retomes sesiones gigantes** — cada turno reenvía todo el historial, así que
+   un `--resume` sobre cientos de MB se dispara. Mira el tamaño primero (comando en
+   `CLAUDE.md`) y para las grandes empieza conversación nueva.
+3. **`--max-budget-usd`** — tope duro, pero solo junto con `--print`.
+
+El tablero usa **Haiku** por dentro para clasificar y proponer nombres: respuestas
+cortas en JSON, céntimos por clic.
+
+Si al retomar una conversación grande sale *"Prompt is too long"*, no está rota:
+repite con `--model sonnet` o superior.
 
 ## Qué hay aquí
 
