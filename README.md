@@ -7,7 +7,7 @@ correcto e ir limpiando lo que ya no usas.
 ## Empezar
 
 ```bash
-git clone <URL-DEL-REPO> ~/Desktop/kit-escritorio
+git clone https://github.com/nicolaspa1/claude-escritorio-tablero.git ~/Desktop/kit-escritorio
 cd ~/Desktop/kit-escritorio
 claude
 ```

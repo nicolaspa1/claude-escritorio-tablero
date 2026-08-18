@@ -4,7 +4,7 @@ Clona el repo, abre Claude Code **dentro de la carpeta** y pega el bloque de aba
 como primer mensaje.
 
 ```bash
-git clone <URL-DEL-REPO> ~/Desktop/kit-escritorio
+git clone https://github.com/nicolaspa1/claude-escritorio-tablero.git ~/Desktop/kit-escritorio
 cd ~/Desktop/kit-escritorio
 claude
 ```
