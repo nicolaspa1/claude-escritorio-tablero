@@ -1,0 +1,15 @@
+{
+ "categorias": [
+  {"id": "01-clientes",  "icono": "🏦", "expandir": true,
+   "que_es": "proyectos por cliente o cuenta: código, entregables y documentación de cada uno"},
+  {"id": "02-interno",   "icono": "🛠", "expandir": true,
+   "que_es": "trabajo interno del equipo: herramientas propias, procesos, plantillas, documentación técnica"},
+  {"id": "03-formacion", "icono": "📚", "expandir": true,
+   "que_es": "cursos, charlas que doy o recibo, y material de formación"},
+  {"id": "04-personal",  "icono": "🏠", "expandir": false,
+   "que_es": "cosas mías que no son del trabajo"},
+  {"id": "05-archivo",   "icono": "🗄", "expandir": false,
+   "que_es": "material cerrado que ya no trabajo, solo consulto"}
+ ],
+ "protegidos": ["Tablero.app"]
+}
