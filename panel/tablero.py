@@ -1013,6 +1013,14 @@ def construir(datos, vivo: bool) -> str:
 
     A(f'<div class="tiles">{tiles}</div>')
 
+    A('<div class="bar-tools">'
+      '<button onclick="refrescar(this)">Actualizar índice</button>'
+      '<button onclick="verSueltos(this)" title="Busca lo que quedó suelto en la raíz y '
+      'propone a qué carpeta llevarlo">Organizar lo suelto</button>'
+      '<input type="search" placeholder="Filtrar proyectos…" oninput="filtrar(this.value)">'
+      '<span class="muted">🗑 manda a la Papelera de macOS (recuperable)</span></div>'
+      '<div id="sueltos" class="propuesta" hidden></div>')
+
     opciones = "".join(f'<option value="{c}">{ICONO[c]} {c[3:]}</option>' for c in CATEGORIAS)
     A('<h2>➕ Crear algo nuevo</h2>')
     A('<div class="crear">'
@@ -1055,13 +1063,6 @@ def construir(datos, vivo: bool) -> str:
       '<button onclick="anadirPend(this)">Añadir</button></div>')
     A(f'<div class="prios">{prios}</div>')
 
-    A('<div class="bar-tools">'
-      '<button onclick="refrescar(this)">Actualizar índice</button>'
-      '<button onclick="verSueltos(this)" title="Busca lo que quedó suelto en la raíz y '
-      'propone a qué carpeta llevarlo">Organizar lo suelto</button>'
-      '<input type="search" placeholder="Filtrar proyectos…" oninput="filtrar(this.value)">'
-      '<span class="muted">🗑 manda a la Papelera de macOS (recuperable)</span></div>'
-      '<div id="sueltos" class="propuesta" hidden></div>')
 
     if datos["nuevos"]:
         A(f'<h2>🆕 Nuevos desde el último refresh ({len(datos["nuevos"])})</h2>')
