@@ -68,6 +68,28 @@ Reglas que no se pueden saltar:
 
 ---
 
+## Con qué modelo correr esto
+
+**La sesión de organización: Sonnet.** El trabajo es leer carpetas, decidir y mover
+ficheros; no necesita el modelo más caro. Si la estructura te parece un problema
+difícil (muchos proyectos, criterios que se solapan) sube a Opus **solo para la fase
+2**, la de proponer la estructura, y vuelve a Sonnet para ejecutar.
+
+**Retomar conversaciones viejas: depende del tamaño.** Un transcript de 70 MB no
+cabe en el contexto de Haiku. Si al hacer `claude --continue` sale *"Prompt is too
+long"*, repite con `--model sonnet` o superior: la sesión está intacta, solo era el
+modelo.
+
+**El tablero usa Haiku por su cuenta.** Cuando pulsas «Proponme algo», «¿Dónde va?» o
+«Organizar lo suelto», el servidor lanza `claude -p --model haiku` en segundo plano
+para clasificar. Es deliberado: son respuestas cortas y estructuradas (un JSON), no
+hace falta más, y así cada clic cuesta céntimos y tarda ~8 s en vez de bastante más.
+Si quieres cambiarlo, están los tres sitios en `panel/tablero.py`:
+
+```bash
+grep -n '"--model"' panel/tablero.py
+```
+
 ## Fase 1 — Entender qué hay
 
 ```bash

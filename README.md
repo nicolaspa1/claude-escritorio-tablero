@@ -37,6 +37,34 @@ acéptalo o el tablero no verá nada. El primer arranque tarda ~15 s escaneando.
 - **Limpiar**: manda a la Papelera lo que sobra y ordena lo que quede suelto.
 - Indicadores de sobrecarga del escritorio, pendientes y espacio en disco.
 
+## Dónde queda cada cosa
+
+Nada de esto ensucia el escritorio: ahí solo aparece `Tablero.app`.
+
+| Archivo | Qué es |
+|---|---|
+| `~/.panel/TABLERO.html` | La última foto del tablero. Es lo que abre la app mientras arranca el servidor |
+| `~/.panel/INDICE_PROYECTOS.md` | El índice en markdown, para leerlo o pasárselo a Claude |
+| `~/.panel/PENDIENTES.md` | Tus pendientes (también se editan desde el tablero) |
+| `~/.panel/notas.json` | Las descripciones de cada proyecto |
+| `~/.panel/borrados.log` | Qué se mandó a la Papelera y cuándo |
+
+**Cuándo se refresca:** al abrir una terminal (máximo una vez al día), cada vez que
+haces algo en el tablero (crear, borrar, mover, marcar un pendiente) y cuando pulsas
+«Actualizar índice». A mano: `refresh`.
+
+Si abres `Tablero.app` y ves datos viejos, es la foto: espera unos segundos a que
+arranque el servidor y la página salta sola a la versión en vivo.
+
+## Qué modelo usar
+
+- **Organizar el escritorio:** Sonnet. Sube a Opus solo si la estructura se te
+  atraganta, y vuelve a Sonnet para ejecutar.
+- **Retomar una conversación enorme:** Sonnet u Opus. Con Haiku sale *"Prompt is too
+  long"* — la sesión está bien, es el contexto del modelo.
+- **El tablero por dentro:** usa Haiku solo, para clasificar carpetas y proponer
+  nombres. Respuestas cortas en JSON: rápido y barato.
+
 ## Qué hay aquí
 
 ```
