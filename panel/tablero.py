@@ -19,6 +19,7 @@ import sys
 import threading
 import time
 import webbrowser
+import datetime as dt
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -30,6 +31,15 @@ HOME = Path.home()
 DESKTOP = (HOME / "Desktop").resolve()
 LOG = HOME / ".panel" / "borrados.log"
 PEND = HOME / ".panel" / "PENDIENTES.md"
+RACHAS = HOME / ".panel" / "rachas.json"
+
+# Lo que se mide a diario. La clave es el id; el resto es presentación.
+HABITOS = [
+    ("anki",     "🃏", "Anki"),
+    ("guitarra", "🎸", "Guitarra"),
+    ("ingles",   "🇬🇧", "Inglés"),
+    ("journal",  "📓", "Journal"),
+]
 PUERTO = 7373
 ICONO = idx.ICONO
 
@@ -753,6 +763,17 @@ input.nota{font:inherit;font-size:12.5px;padding:5px 8px;border-radius:6px;
  border-left:3px solid var(--series-1);border-radius:10px;padding:13px 15px;margin-top:10px}
 .propuesta .razon{font-size:13px;color:var(--text-2);margin-bottom:10px}
 .prios h3{font-size:13.5px;font-weight:600;margin:13px 0 5px}
+.rachas{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.racha{flex:1;min-width:120px;background:#fff;border:1px solid #e3e0d8;border-radius:10px;
+ padding:10px 12px;cursor:pointer;transition:.12s;user-select:none}
+.racha:hover{border-color:#c9c4b6;transform:translateY(-1px)}
+.racha.hoy{background:#f2f8f0;border-color:#9ec89a}
+.rt{font-size:12px;color:#6b6558;margin-bottom:4px}
+.rn{font-size:26px;font-weight:600;line-height:1}
+.rn span{font-size:12px;font-weight:400;color:#8a8478;margin-left:4px}
+.rp{display:flex;gap:3px;margin-top:7px}
+.pip{width:9px;height:9px;border-radius:50%;background:#e3e0d8}
+.pip.on{background:#6aa864}
 .todo{display:flex;gap:9px;align-items:baseline;padding:3px 0;cursor:pointer;border-radius:5px}
 .todo:hover{background:var(--card)}
 .todo .box{flex:none;width:15px;height:15px;border:1.5px solid var(--muted);border-radius:4px;
@@ -926,6 +947,18 @@ async function anadirPend(b){
     i.value='';location.reload();}
   catch(e){toast('Error: '+e);}
 }
+document.addEventListener('click',ev=>{
+  const c = ev.target.closest('.racha');
+  if(c) marcarRacha(c);
+});
+async function marcarRacha(el){
+  if(!vivo) return toast('Arranca el servidor con  tablero  para marcar rachas');
+  const r = await fetch('/api/racha',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({habito:el.dataset.hab})}).then(x=>x.json()).catch(()=>null);
+  if(!r || r.error) return toast(r ? r.error : 'no se pudo');
+  location.reload();
+}
 async function marcar(linea,hecho){
   if(!vivo) return toast('Arranca el servidor con  tablero  para marcar pendientes');
   try{const r=await fetch('/api/pendiente',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -994,6 +1027,57 @@ def md_inline(s):
     s = e(s)
     s = MD_FUERTE.sub(r"<strong>\1</strong>", s)
     return MD_CODIGO.sub(r"<code>\1</code>", s)
+
+
+def cargar_rachas() -> dict:
+    """Lee rachas.json tolerando que no exista o esté corrupto."""
+    try:
+        d = json.loads(RACHAS.read_text())
+        return {k: sorted(set(v)) for k, v in d.items() if isinstance(v, list)}
+    except Exception:
+        return {}
+
+
+def guardar_rachas(d: dict) -> None:
+    """Escritura atómica: dos pestañas marcando a la vez no pueden corromperlo."""
+    tmp = RACHAS.with_suffix(".tmp")
+    tmp.write_text(json.dumps(d, ensure_ascii=False, indent=1))
+    os.replace(tmp, RACHAS)
+
+
+def racha_de(fechas: list) -> int:
+    """Días consecutivos hasta hoy.
+
+    Si hoy todavía no está marcado se cuenta desde ayer: la racha no debe
+    parecer rota a las 9 de la mañana solo porque aún no has hecho lo de hoy.
+    """
+    s = set(fechas)
+    hoy = dt.date.today()
+    inicio = hoy if hoy.isoformat() in s else hoy - dt.timedelta(days=1)
+    n, d = 0, inicio
+    while d.isoformat() in s:
+        n += 1
+        d -= dt.timedelta(days=1)
+    return n
+
+
+def rachas_html() -> str:
+    d = cargar_rachas()
+    hoy = dt.date.today().isoformat()
+    ult7 = [(dt.date.today() - dt.timedelta(days=i)).isoformat() for i in range(6, -1, -1)]
+    T = []
+    for hid, emoji, nombre in HABITOS:
+        f = d.get(hid, [])
+        n, hecho = racha_de(f), hoy in f
+        puntos = "".join(
+            f'<span class="pip{" on" if x in f else ""}"></span>' for x in ult7)
+        T.append(
+            f'<div class="racha{" hoy" if hecho else ""}" data-hab="{hid}" '
+            f'title="Clic para marcar hoy">'
+            f'<div class="rt">{emoji} {e(nombre)}</div>'
+            f'<div class="rn">{n}<span>{"día" if n == 1 else "días"}</span></div>'
+            f'<div class="rp">{puntos}</div></div>')
+    return "".join(T)
 
 
 def prioridades_html():
@@ -1127,6 +1211,10 @@ def construir(datos, vivo: bool) -> str:
       '<button onclick="crear(this)">Crear</button>'
       '<span class="pista" id="c-ruta"></span>'
       '</div></div>')
+
+    A('<h2>🔥 Rachas <span style="text-transform:none;font-weight:400">· '
+      'clic para marcar hoy</span></h2>')
+    A(f'<div class="rachas">{rachas_html()}</div>')
 
     prios, _ = prioridades_html()
     A('<h2>Prioridades <span style="text-transform:none;font-weight:400">· '
@@ -1435,6 +1523,21 @@ class Handler(BaseHTTPRequestHandler):
                 f.write_text("\n".join(lineas) + "\n")
                 escribir_salidas(datos_actuales())
                 return self._json(200, {"msg": "ok"})
+            except Exception as ex:
+                return self._json(400, {"error": str(ex)})
+        if self.path == "/api/racha":
+            try:
+                hid = json.loads(cuerpo).get("habito", "")
+                if hid not in {h[0] for h in HABITOS}:
+                    raise ValueError("hábito desconocido")
+                d = cargar_rachas()
+                hoy = dt.date.today().isoformat()
+                f = set(d.get(hid, []))
+                f.discard(hoy) if hoy in f else f.add(hoy)   # clic = alternar
+                d[hid] = sorted(f)
+                guardar_rachas(d)
+                escribir_salidas(_CACHE["datos"] or datos_actuales())
+                return self._json(200, {"racha": racha_de(d[hid]), "hoy": hoy in f})
             except Exception as ex:
                 return self._json(400, {"error": str(ex)})
         if self.path == "/api/borrar":
