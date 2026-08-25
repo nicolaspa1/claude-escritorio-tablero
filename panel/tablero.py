@@ -135,6 +135,69 @@ def crear_carpeta(nombre, categoria, con_claude, descripcion=""):
 QUE_ES_CADA_UNA = idx.QUE_ES_CADA_UNA
 
 
+def rutas_mencionadas(texto):
+    """Carpetas reales del escritorio que el usuario escribió en su texto.
+
+    Si alguien se molesta en pegar una ruta, esa gana sobre cualquier deducción.
+    Admite `~/Desktop/...`, rutas absolutas y espacios escapados (`Latin\\ Basico`),
+    y se queda con el tramo más largo que exista de verdad en el disco.
+    """
+    t = texto.replace("\\ ", " ")
+    salida = []
+    for m in re.finditer(r"(?:~|/Users/[^/\s]+)/Desktop/", t):
+        resto = re.split(r"[\n\r\"']", t[m.end():])[0]
+        acc, mejor = DESKTOP, None
+        for trozo in resto.split("/"):
+            trozo = trozo.strip()
+            if not trozo:
+                break
+            if (acc / trozo).is_dir():
+                acc = acc / trozo
+                mejor = acc
+                continue
+            # El último trozo suele traer texto pegado detrás; se prueba
+            # palabra a palabra hasta dar con la carpeta ("Tareas y me recomienda...").
+            palabras = trozo.split(" ")
+            hallado = None
+            for i in range(len(palabras), 0, -1):
+                cand = acc / " ".join(palabras[:i])
+                if cand.is_dir():
+                    hallado = cand
+                    break
+            if hallado:
+                mejor = acc = hallado
+            break
+        if mejor and mejor != DESKTOP and mejor not in salida:
+            salida.append(mejor)
+    return salida
+
+
+def subcarpetas_reales(categoria, tope=5):
+    """Carpetas existentes dentro de una categoría, hasta cierta profundidad.
+
+    El índice no expande 05-personal ni 06-archivo, así que sin esto Claude no
+    puede proponer un destino hondo que ya existe y acaba dejando las cosas
+    sueltas en la raíz de la categoría.
+    """
+    raiz = DESKTOP / categoria
+    if not raiz.is_dir():
+        return []
+    fuera = []
+    for base, dirs, _ in os.walk(raiz):
+        rel = Path(base).relative_to(raiz)
+        nivel = len(rel.parts)
+        # No se desciende dentro de un proyecto ni de un bundle .app: sus
+        # entrañas (src/, Contents/MacOS…) nunca son destino de nada nuevo.
+        dentro_de_proyecto = nivel > 0 and idx.es_proyecto(Path(base))
+        dirs[:] = ([d for d in sorted(dirs)
+                    if d not in idx.EXCLUIR and not d.startswith(".")
+                    and not d.endswith(".app")]
+                   if nivel < tope and not dentro_de_proyecto else [])
+        if nivel:
+            fuera.append(str(rel))
+    return fuera[:60]
+
+
 def proponer(texto, datos):
     """A partir de «lo que vas a hacer», Claude propone qué crear, cómo llamarlo y dónde.
 
@@ -145,7 +208,19 @@ def proponer(texto, datos):
     for cat in CATEGORIAS:
         dentro = [f for f in datos["filas"] if f["cat"] == cat][:10]
         muestra = "; ".join(f"{f['rel'].split('/', 1)[-1]} ({f['desc'][:45]})" for f in dentro)
-        inventario.append(f"- {cat}: {QUE_ES_CADA_UNA[cat]}.\n    Ya contiene: {muestra or '—'}")
+        # Carpetas que existen de verdad, incluidas las hondas que el índice no
+        # expande: sin esto no se puede proponer un destino que ya existe.
+        hondas = "; ".join(subcarpetas_reales(cat))
+        inventario.append(f"- {cat}: {QUE_ES_CADA_UNA[cat]}.\n    Ya contiene: {muestra or '—'}"
+                          + (f"\n    Carpetas existentes: {hondas}" if hondas else ""))
+
+    mencionadas = rutas_mencionadas(texto)
+    aviso_ruta = ""
+    if mencionadas:
+        opciones = "; ".join(str(r.relative_to(DESKTOP)) for r in mencionadas)
+        aviso_ruta = (f"\n\nEL USUARIO ESCRIBIÓ ESTAS RUTAS, QUE EXISTEN: {opciones}\n"
+                      "Es donde quiere que vaya la cosa. Usa esa ruta como categoría +\n"
+                      "subcarpeta salvo que sea imposible, y no propongas una menos honda.")
 
     prompt = f"""Eres el organizador de este escritorio. El usuario te cuenta qué va a hacer y tú
 decides QUÉ crear, CÓMO llamarlo y DÓNDE ponerlo. Él no sabe el nombre todavía: propónselo tú.
@@ -159,6 +234,8 @@ QUÉ CREAR SEGÚN EL CASO:
 - "carpeta": varias cosas relacionadas que solo se guardan (PDFs, fotos, material recibido).
 - "proyecto": algo en lo que va a TRABAJAR (código, investigación, contenido que evoluciona).
   Los proyectos llevan un CLAUDE.md para que las sesiones de Claude arranquen con contexto.
+
+{aviso_ruta}
 
 ÉL VA A HACER: "{texto}"
 

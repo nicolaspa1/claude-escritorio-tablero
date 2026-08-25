@@ -264,6 +264,15 @@ regeneración empezó a fallar en silencio. Escribe a un temporal y renombra con
 existe: puede llevar mayúsculas y varios niveles (`estudio/Idiomas`). Pasarla por
 slug convertía las barras en guiones y rompía la creación con un "no existe".
 
+**Claude solo puede proponer un destino que le hayas enseñado.** El índice no
+expande todas las categorías, así que la lista de proyectos no incluye las carpetas
+hondas. Con eso el «Crear algo nuevo» proponía crear una carpeta suelta al lado de
+la que ya existía. Al prompt hay que darle dos cosas aparte del índice: las
+subcarpetas que existen de verdad (`subcarpetas_reales`, podando proyectos y
+bundles `.app`) y, si el usuario pegó una ruta en su texto, esa ruta como orden
+(`rutas_mencionadas`, que aguanta espacios escapados y texto pegado detrás). Si
+alguien se molesta en escribir la ruta, esa gana.
+
 **Nada de rutas atadas a un usuario.** El filtro de sesiones llegó a tener escrito
 `-Users-<alguien>-Desktop`; en otra máquina no mostraba ninguna conversación. Se
 calcula con `encode(DESKTOP)`.
